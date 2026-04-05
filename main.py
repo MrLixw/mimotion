@@ -27,10 +27,51 @@ def get_min_max_by_time(hour=None, minute=None):
         hour = time_bj.hour
     if minute is None:
         minute = time_bj.minute
-    time_rate = min((hour * 60 + minute) / (22 * 60), 1)
-    min_step = get_int_value_default(config, 'MIN_STEP', 18000)
-    max_step = get_int_value_default(config, 'MAX_STEP', 25000)
-    return int(time_rate * min_step), int(time_rate * max_step)
+
+    # 时间段步数配置（小时：基准步数）
+    time_steps = {
+        0: 12000,   # 保留21点之后的值
+        1: 12000,
+        2: 12000,
+        3: 12000,
+        4: 12000,
+        5: 12000,
+        6: 12000,
+        7: 12000,
+        8: 12000,
+        9: 2500,
+        10: 2750,   # 9-11点插值
+        11: 3000,
+        12: 3750,   # 11-13点插值
+        13: 4500,
+        14: 4750,   # 13-16点插值
+        15: 4875,
+        16: 5000,
+        17: 6000,   # 16-19点插值
+        18: 6500,
+        19: 7000,
+        20: 9500,   # 19-21点插值
+        21: 12000,
+        22: 12000,   # 21点之后保持
+        23: 12000,
+    }
+
+    # 获取当前小时和下一小时的基准步数
+    current_base = time_steps.get(hour, 12000)
+    next_base = time_steps.get((hour + 1) % 24, 12000)
+
+    # 根据分钟数进行线性插值
+    minute_ratio = minute / 60.0
+    base_step = int(current_base + (next_base - current_base) * minute_ratio)
+
+    # 浮动范围：±100-200
+    float_range = random.randint(100, 200)
+
+    # 计算最小和最大步数
+    min_step = base_step - float_range
+    max_step = base_step + float_range
+
+    return min_step, max_step
 
 
 # 虚拟ip地址
